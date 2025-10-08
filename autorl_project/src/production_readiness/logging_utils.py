@@ -4,6 +4,7 @@ from PIL import Image, ImageDraw, ImageFilter
 from datetime import datetime
 import hashlib
 import logging
+from typing import Optional
 
 LOG_DIR = "./logs"
 os.makedirs(LOG_DIR, exist_ok=True)
