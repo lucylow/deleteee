@@ -15,6 +15,17 @@ const validate = (req, res, next) => {
 };
 
 /**
+ * Compute sum of line items
+ */
+const computeLineSum = (lineItems = []) => {
+  return lineItems.reduce((acc, li) => {
+    const qty = Number(li.qty || li.quantity || 0);
+    const unit = Number(li.unit_price || li.unitPrice || li.price || 0);
+    return acc + (qty * unit);
+  }, 0);
+};
+
+/**
  * Validation rules for creating an invoice
  */
 const createInvoiceValidation = [
@@ -41,14 +52,47 @@ const createInvoiceValidation = [
     .withMessage('Invalid Stacks address format'),
   
   body('totalAmount')
-    .optional()
-    .isFloat({ min: 0 })
-    .withMessage('Total amount must be a positive number'),
+    .isFloat({ gt: 0 })
+    .withMessage('Total amount must be greater than 0')
+    .custom((value, { req }) => {
+      // Validate amount matches line items sum
+      const lineItems = req.body.lineItems || req.body.line_items || [];
+      if (lineItems.length === 0) {
+        throw new Error('At least one line item is required');
+      }
+      
+      const lineSum = computeLineSum(lineItems);
+      const roundedLineSum = Math.round(lineSum * 100) / 100;
+      const roundedAmount = Math.round(Number(value) * 100) / 100;
+      
+      // Allow 1 cent tolerance for floating point
+      if (Math.abs(roundedLineSum - roundedAmount) > 0.01) {
+        throw new Error(`Total amount ${roundedAmount} does not match line items sum ${roundedLineSum}`);
+      }
+      
+      return true;
+    }),
   
   body('currency')
     .optional()
     .isIn(['sBTC', 'STX', 'USD'])
     .withMessage('Invalid currency'),
+  
+  body('lineItems')
+    .isArray({ min: 1 })
+    .withMessage('At least one line item is required'),
+  
+  body('lineItems.*.description')
+    .notEmpty()
+    .withMessage('Line item description is required'),
+  
+  body('lineItems.*.qty')
+    .isFloat({ gt: 0 })
+    .withMessage('Line item quantity must be greater than 0'),
+  
+  body('lineItems.*.unitPrice')
+    .isFloat({ min: 0 })
+    .withMessage('Line item unit price must be non-negative'),
   
   validate
 ];
@@ -191,6 +235,7 @@ module.exports = {
   invoiceIdValidation,
   aiParseValidation,
   isValidStacksAddress,
-  sanitizeInput
+  sanitizeInput,
+  computeLineSum
 };
 

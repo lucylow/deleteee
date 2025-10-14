@@ -1,7 +1,7 @@
 const logger = require('../utils/logger');
 
 /**
- * Global error handler middleware
+ * Global error handler middleware with structured error responses
  */
 const errorHandler = (err, req, res, next) => {
   logger.error('Unhandled error', {
@@ -13,15 +13,27 @@ const errorHandler = (err, req, res, next) => {
   });
 
   // Default error status code
-  const statusCode = err.statusCode || 500;
+  const statusCode = err.statusCode || err.status || 500;
+  
+  // Map error codes to user-friendly messages
+  const userMessages = {
+    'INVALID_INPUT': 'Please check the required fields and try again.',
+    'AMOUNT_MISMATCH': 'The invoice total doesn\'t match the line items. Please verify your calculations.',
+    'UNAUTHORIZED': 'You don\'t have permission to perform this action.',
+    'NOT_FOUND': 'The requested resource was not found.',
+    'TOO_MANY_REQUESTS': 'You\'re sending requests too quickly. Please wait a moment and try again.'
+  };
 
-  // Send error response
+  // Send structured error response
   res.status(statusCode).json({
-    success: false,
-    error: err.message || 'Internal server error',
+    error: {
+      code: err.code || 'INTERNAL_SERVER_ERROR',
+      message: err.message || 'Internal server error',
+      userMessage: err.userMessage || userMessages[err.code] || 'Something went wrong. Please try again or contact support.',
+      details: err.details || null
+    },
     ...(process.env.NODE_ENV === 'development' && {
-      stack: err.stack,
-      details: err.details
+      stack: err.stack
     })
   });
 };
