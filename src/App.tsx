@@ -18,6 +18,7 @@ import Analytics from "./pages/Analytics";
 import YieldOptimizerPage from "./pages/YieldOptimizerPage";
 import CrossChainSwapPage from "./pages/CrossChainSwapPage";
 import Treasury from "./pages/Treasury";
+import InvoiceEditorPage from "./pages/InvoiceEditorPage";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,7 @@ const App = () => (
           <Route path="/yield-optimizer" element={<YieldOptimizerPage />} />
           <Route path="/cross-chain-swap" element={<CrossChainSwapPage />} />
           <Route path="/treasury" element={<Treasury />} />
+          <Route path="/invoice-editor" element={<InvoiceEditorPage />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
